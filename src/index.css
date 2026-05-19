@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background: #08070d;
+  color: #f5f4ff;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Aurora / mesh gradient background used by Landing */
+.aurora {
+  background:
+    radial-gradient(60% 60% at 15% 20%, rgba(109, 92, 255, 0.45) 0%, transparent 60%),
+    radial-gradient(50% 50% at 85% 30%, rgba(255, 77, 196, 0.4) 0%, transparent 60%),
+    radial-gradient(60% 60% at 50% 90%, rgba(56, 189, 248, 0.3) 0%, transparent 65%),
+    linear-gradient(180deg, #08070d 0%, #0d0c14 100%);
+}
+
+.grid-overlay {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+}
+
+.glass {
+  background: rgba(20, 18, 32, 0.55);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, #b6acff 0%, #ff9be0 50%, #80ddff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-semibold text-white transition-all;
+  background-image: linear-gradient(120deg, #6d5cff, #ff4dc4);
+  background-size: 200% 200%;
+  box-shadow: 0 12px 40px -12px rgba(109, 92, 255, 0.7);
+}
+.btn-primary:hover {
+  background-position: 100% 0;
+  transform: translateY(-1px);
+  box-shadow: 0 16px 50px -10px rgba(255, 77, 196, 0.6);
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-3 font-semibold text-white/90 transition-all hover:bg-white/10 hover:border-white/20;
+}
+
+.card {
+  @apply rounded-2xl border border-white/5 bg-ink-800/60 p-5 backdrop-blur;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(139, 124, 255, 0.4);
+  box-shadow: 0 20px 60px -20px rgba(109, 92, 255, 0.45);
+}
+
+.chip {
+  @apply inline-flex items-center gap-1 rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-white/70 border border-white/5;
+}
+
+input.field, textarea.field, select.field {
+  @apply w-full rounded-xl border border-white/10 bg-ink-900/60 px-4 py-3 text-white placeholder-white/30 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30;
+}
+
+/* Mapbox tweaks */
+.mapboxgl-popup-content {
+  background: #15131f !important;
+  color: #f5f4ff !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px 16px !important;
+  font-family: 'Inter', sans-serif;
+}
+.mapboxgl-popup-tip {
+  border-top-color: #15131f !important;
+  border-bottom-color: #15131f !important;
+}
+.mapboxgl-ctrl-attrib,
+.mapboxgl-ctrl-logo {
+  filter: invert(0.8) hue-rotate(180deg);
+  opacity: 0.4;
+}
+
+/* User location marker pulse */
+.user-marker {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6d5cff, #ff4dc4);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 4px rgba(109, 92, 255, 0.35);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.user-marker:hover {
+  transform: scale(1.25);
+}
+.user-marker.self {
+  background: #38bdf8;
+  box-shadow: 0 0 0 8px rgba(56, 189, 248, 0.25);
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.6); }
+  100% { box-shadow: 0 0 0 22px rgba(56, 189, 248, 0); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
