@@ -1,5 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useChat } from '../context/ChatContext'
+import { useToast } from '../context/ToastContext'
 
 const linkBase =
   'px-3 py-2 rounded-full text-sm font-medium transition text-white/70 hover:text-white hover:bg-white/5'
@@ -7,9 +9,17 @@ const linkActive = 'text-white bg-white/10'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
+  const { unreadCount } = useChat()
+  const { showToast } = useToast()
   const navigate = useNavigate()
 
   if (!user) return null
+
+  function onSignOut() {
+    logout()
+    showToast('Signed out')
+    navigate('/')
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-white/5 bg-ink-950/70 backdrop-blur-xl">
@@ -26,8 +36,13 @@ export default function Navbar() {
           <NavLink to="/map" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : ''}`}>
             Map
           </NavLink>
-          <NavLink to="/messages" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : ''}`}>
+          <NavLink to="/messages" className={({ isActive }) => `${linkBase} relative ${isActive ? linkActive : ''}`}>
             Messages
+            {unreadCount > 0 && (
+              <span className="ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-gradient-to-r from-brand-500 to-accent-500 px-1 text-[10px] font-bold text-white">
+                {unreadCount}
+              </span>
+            )}
           </NavLink>
           <NavLink to="/profile" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : ''}`}>
             Profile
@@ -43,10 +58,7 @@ export default function Navbar() {
             {user.displayName[0]?.toUpperCase() ?? 'U'}
           </div>
           <button
-            onClick={() => {
-              logout()
-              navigate('/')
-            }}
+            onClick={onSignOut}
             className="hidden rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/70 transition hover:bg-white/10 md:block"
           >
             Sign out

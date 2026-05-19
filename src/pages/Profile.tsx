@@ -1,6 +1,9 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { MOCK_USERS } from '../data/mockUsers'
+import { useChat } from '../context/ChatContext'
+import { useToast } from '../context/ToastContext'
+import { MOCK_USERS, MockUser } from '../data/mockUsers'
 import { distanceMiles } from '../data/zipcodes'
 
 const SUGGESTED_INTERESTS = [
@@ -14,12 +17,17 @@ const VIBE_OPTIONS = ['Coffee chats', 'Workout buddy', 'Foodie', 'Hike & explore
 
 export default function Profile() {
   const { user, updateZip, logout } = useAuth()
+  const { openThread } = useChat()
+  const { showToast } = useToast()
+  const navigate = useNavigate()
   const me = user!
+
   const [interests, setInterests] = useState<string[]>(['specialty coffee', 'AI', 'climbing'])
   const [bio, setBio] = useState('New in town. Looking for a Saturday hike crew and a regular coffee spot.')
   const [vibe, setVibe] = useState<(typeof VIBE_OPTIONS)[number]>('Coffee chats')
   const [zipDraft, setZipDraft] = useState(me.zipRecord.zip)
   const [zipError, setZipError] = useState<string | null>(null)
+  const [profileDirty, setProfileDirty] = useState(false)
 
   const meLoc = { lat: me.zipRecord.lat, lng: me.zipRecord.lng }
   const neighbors = MOCK_USERS
@@ -29,15 +37,34 @@ export default function Profile() {
 
   function toggleInterest(t: string) {
     setInterests((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]))
+    setProfileDirty(true)
   }
 
   function onSaveZip() {
     const res = updateZip(zipDraft)
     if (!res.ok) {
       setZipError(res.error)
-    } else {
-      setZipError(null)
+      return
     }
+    setZipError(null)
+    showToast('Location updated', 'success')
+  }
+
+  function onSaveProfile() {
+    setProfileDirty(false)
+    showToast('Profile saved', 'success')
+  }
+
+  function onSignOut() {
+    logout()
+    showToast('Signed out')
+    navigate('/')
+  }
+
+  function startConversation(u: MockUser) {
+    openThread(u.id)
+    showToast(`Opened chat with ${u.name.split(' ')[0]}`, 'success')
+    navigate('/messages')
   }
 
   return (
@@ -63,19 +90,33 @@ export default function Profile() {
               <span className="chip">Member since {new Date(me.joinedAt).toLocaleDateString()}</span>
             </div>
           </div>
-          <button onClick={logout} className="btn-ghost text-sm">Sign out</button>
+          <button onClick={onSignOut} className="btn-ghost text-sm">Sign out</button>
         </div>
       </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-3">
         {/* Bio + vibe */}
         <div className="card lg:col-span-2">
-          <h2 className="font-display text-lg font-semibold">About you</h2>
-          <p className="mt-1 text-xs text-white/45">Visible to neighbors within your radius.</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-display text-lg font-semibold">About you</h2>
+              <p className="mt-1 text-xs text-white/45">Visible to neighbors within your radius.</p>
+            </div>
+            <button
+              onClick={onSaveProfile}
+              disabled={!profileDirty}
+              className="rounded-full bg-gradient-to-r from-brand-500 to-accent-500 px-4 py-1.5 text-xs font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Save changes
+            </button>
+          </div>
           <textarea
             className="field mt-4 min-h-[120px] resize-y"
             value={bio}
-            onChange={(e) => setBio(e.target.value)}
+            onChange={(e) => {
+              setBio(e.target.value)
+              setProfileDirty(true)
+            }}
           />
           <div className="mt-4">
             <div className="text-xs uppercase tracking-widest text-white/45">Primary vibe</div>
@@ -83,7 +124,10 @@ export default function Profile() {
               {VIBE_OPTIONS.map((v) => (
                 <button
                   key={v}
-                  onClick={() => setVibe(v)}
+                  onClick={() => {
+                    setVibe(v)
+                    setProfileDirty(true)
+                  }}
                   className={`rounded-full border px-3 py-1.5 text-sm transition ${
                     vibe === v
                       ? 'border-transparent bg-gradient-to-r from-brand-500 to-accent-500 text-white'
@@ -148,12 +192,16 @@ export default function Profile() {
         <div className="mb-3 flex items-end justify-between">
           <div>
             <h2 className="font-display text-2xl font-semibold">Closest neighbors</h2>
-            <p className="text-sm text-white/55">Your 20 nearest matches in {me.zipRecord.city}.</p>
+            <p className="text-sm text-white/55">Your 20 nearest matches in {me.zipRecord.city}. Click any to start a chat.</p>
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {neighbors.map(({ u, d }) => (
-            <div key={u.id} className="card flex items-center gap-3">
+            <button
+              key={u.id}
+              onClick={() => startConversation(u)}
+              className="card flex items-center gap-3 text-left"
+            >
               <img src={u.avatar} className="h-12 w-12 rounded-xl object-cover" />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{u.name}</div>
@@ -161,7 +209,7 @@ export default function Profile() {
                 <div className="mt-1 truncate text-[11px] text-brand-400">{u.vibe}</div>
               </div>
               {u.online && <span className="h-2 w-2 rounded-full bg-emerald-400" />}
-            </div>
+            </button>
           ))}
         </div>
       </section>

@@ -7,6 +7,7 @@ import MapView from './pages/MapView'
 import Profile from './pages/Profile'
 import Messages from './pages/Messages'
 import Navbar from './components/Navbar'
+import ToastHost from './components/ToastHost'
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user } = useAuth()
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
+      <ToastHost />
     </div>
   )
 }

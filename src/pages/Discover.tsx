@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useChat } from '../context/ChatContext'
+import { useToast } from '../context/ToastContext'
 import { MOCK_USERS, MOCK_EVENTS, MockUser } from '../data/mockUsers'
 import { distanceMiles } from '../data/zipcodes'
 import UserCard from '../components/UserCard'
@@ -11,11 +14,15 @@ const VIBE_FILTERS: Array<MockUser['vibe'] | 'All'> = [
 
 export default function Discover() {
   const { user } = useAuth()
+  const { openThread } = useChat()
+  const { showToast } = useToast()
+  const navigate = useNavigate()
   const [vibe, setVibe] = useState<(typeof VIBE_FILTERS)[number]>('All')
   const [radius, setRadius] = useState(25)
   const [query, setQuery] = useState('')
+  const [rsvps, setRsvps] = useState<Record<string, boolean>>({})
 
-  const me = user! // protected route guarantees this
+  const me = user!
   const meLoc = { lat: me.zipRecord.lat, lng: me.zipRecord.lng }
 
   const ranked = useMemo(() => {
@@ -39,6 +46,20 @@ export default function Discover() {
   }, [ranked, vibe, radius, query])
 
   const onlineCount = filtered.filter(({ u }) => u.online).length
+
+  function startConversation(u: MockUser) {
+    openThread(u.id)
+    showToast(`Opened chat with ${u.name.split(' ')[0]}`, 'success')
+    navigate('/messages')
+  }
+
+  function toggleRsvp(eventId: string, title: string) {
+    setRsvps((cur) => {
+      const next = { ...cur, [eventId]: !cur[eventId] }
+      showToast(next[eventId] ? `RSVP'd to ${title}` : `Removed RSVP from ${title}`, 'success')
+      return next
+    })
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-8">
@@ -104,20 +125,38 @@ export default function Discover() {
         </div>
         <div className="-mx-5 overflow-x-auto px-5 pb-2">
           <div className="flex gap-3" style={{ width: 'max-content' }}>
-            {MOCK_EVENTS.map((e) => (
-              <div key={e.id} className="w-64 shrink-0 rounded-2xl border border-white/5 bg-ink-800/60 p-4 transition hover:border-brand-500/40">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="rounded-full bg-white/5 px-2 py-0.5 text-white/60">{e.category}</span>
-                  <span className="text-white/40">{e.attendees} going</span>
+            {MOCK_EVENTS.map((e) => {
+              const going = !!rsvps[e.id]
+              const attendees = going ? e.attendees + 1 : e.attendees
+              return (
+                <div
+                  key={e.id}
+                  className={`w-64 shrink-0 rounded-2xl border bg-ink-800/60 p-4 transition ${
+                    going ? 'border-brand-500/50 shadow-[0_10px_30px_-15px_rgba(109,92,255,0.6)]' : 'border-white/5 hover:border-brand-500/40'
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="rounded-full bg-white/5 px-2 py-0.5 text-white/60">{e.category}</span>
+                    <span className="text-white/40">{attendees} going</span>
+                  </div>
+                  <div className="mt-3 font-semibold leading-tight">{e.title}</div>
+                  <div className="mt-1 text-xs text-white/50">{e.city} · {e.whenLabel}</div>
+                  <div className="mt-3 flex items-center justify-between text-xs">
+                    <span className="text-white/45">hosted by {e.host}</span>
+                    <button
+                      onClick={() => toggleRsvp(e.id, e.title)}
+                      className={`rounded-full px-2.5 py-1 transition ${
+                        going
+                          ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white'
+                          : 'border border-white/10 hover:bg-white/10'
+                      }`}
+                    >
+                      {going ? 'Going ✓' : 'RSVP'}
+                    </button>
+                  </div>
                 </div>
-                <div className="mt-3 font-semibold leading-tight">{e.title}</div>
-                <div className="mt-1 text-xs text-white/50">{e.city} · {e.whenLabel}</div>
-                <div className="mt-3 flex items-center justify-between text-xs">
-                  <span className="text-white/45">hosted by {e.host}</span>
-                  <button className="rounded-full border border-white/10 px-2.5 py-1 hover:bg-white/10">RSVP</button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </section>
@@ -136,7 +175,7 @@ export default function Discover() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map(({ u, d }) => (
-              <UserCard key={u.id} user={u} distanceMi={d} />
+              <UserCard key={u.id} user={u} distanceMi={d} onMessage={startConversation} />
             ))}
           </div>
         )}

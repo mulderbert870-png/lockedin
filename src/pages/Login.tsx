@@ -1,9 +1,11 @@
 import { FormEvent, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
 
 export default function Login() {
   const { login } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: string } | null)?.from ?? '/discover'
@@ -15,17 +17,34 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  function onSubmit(e: FormEvent) {
-    e.preventDefault()
+  function attemptLogin(emailToUse: string, passwordToUse: string, zipToUse: string) {
     setError(null)
     setLoading(true)
-    const result = login(email, password, zip)
+    const result = login(emailToUse, passwordToUse, zipToUse)
     setLoading(false)
     if (!result.ok) {
       setError(result.error)
-      return
+      return false
     }
-    navigate(from, { replace: true })
+    return true
+  }
+
+  function onSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (attemptLogin(email, password, zip)) {
+      showToast('Welcome to LockedIn 👋', 'success')
+      navigate(from, { replace: true })
+    }
+  }
+
+  function onSocial(provider: 'Apple' | 'Google' | 'Phone') {
+    // Mock OAuth: synthesize a deterministic email per provider and reuse the
+    // ZIP the user already typed. Any password ≥ 4 chars works in the mock.
+    const provEmail = `you@${provider.toLowerCase()}.local`
+    if (attemptLogin(provEmail, 'social-mock', zip)) {
+      showToast(`Continued with ${provider}`, 'success')
+      navigate(from, { replace: true })
+    }
   }
 
   return (
@@ -144,10 +163,23 @@ export default function Login() {
               </div>
             </form>
 
-            <div className="mt-8 grid grid-cols-3 gap-2 text-center text-xs text-white/40">
-              <div className="rounded-xl border border-white/5 bg-white/5 py-2">Apple</div>
-              <div className="rounded-xl border border-white/5 bg-white/5 py-2">Google</div>
-              <div className="rounded-xl border border-white/5 bg-white/5 py-2">Phone</div>
+            <div className="mt-6 flex items-center gap-3 text-[10px] uppercase tracking-widest text-white/35">
+              <span className="h-px flex-1 bg-white/10" />
+              or continue with
+              <span className="h-px flex-1 bg-white/10" />
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center text-sm text-white/80">
+              {(['Apple', 'Google', 'Phone'] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => onSocial(p)}
+                  disabled={loading}
+                  className="rounded-xl border border-white/10 bg-white/5 py-2.5 font-medium transition hover:border-white/25 hover:bg-white/10 disabled:opacity-50"
+                >
+                  {p}
+                </button>
+              ))}
             </div>
           </div>
         </div>

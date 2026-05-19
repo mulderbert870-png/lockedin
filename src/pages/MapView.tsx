@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import mapboxgl from 'mapbox-gl'
 import { useAuth } from '../context/AuthContext'
+import { useChat } from '../context/ChatContext'
+import { useToast } from '../context/ToastContext'
 import { MOCK_USERS, MockUser } from '../data/mockUsers'
 import { distanceMiles } from '../data/zipcodes'
 import type { SessionUser } from '../context/AuthContext'
@@ -17,11 +20,21 @@ export default function MapView() {
 }
 
 function MapViewInner({ me }: { me: SessionUser }) {
+  const navigate = useNavigate()
+  const { openThread } = useChat()
+  const { showToast } = useToast()
   const mapContainer = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const markersRef = useRef<mapboxgl.Marker[]>([])
   const [selected, setSelected] = useState<MockUser | null>(null)
   const [radius, setRadius] = useState(50)
+
+  function messageSelected() {
+    if (!selected) return
+    openThread(selected.id)
+    showToast(`Opened chat with ${selected.name.split(' ')[0]}`, 'success')
+    navigate('/messages')
+  }
 
   const visible = useMemo(() => {
     const meLoc = { lat: me.zipRecord.lat, lng: me.zipRecord.lng }
@@ -218,7 +231,9 @@ function MapViewInner({ me }: { me: SessionUser }) {
               <span key={t} className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-white/65">#{t}</span>
             ))}
           </div>
-          <button className="btn-primary mt-4 w-full text-sm">Send a message</button>
+          <button onClick={messageSelected} className="btn-primary mt-4 w-full text-sm">
+            Send a message
+          </button>
         </div>
       )}
     </div>
